@@ -4,6 +4,18 @@
   padding: 20px 24px 48px;
 }
 
+.page-nav {
+  display: flex; gap: 8px;
+  max-width: 1200px; margin: 0 auto; padding: 12px 24px 0;
+}
+.page-nav button {
+  background: none; border: 1px solid var(--border); border-bottom: none;
+  color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 8px 16px; cursor: pointer;
+  border-radius: 6px 6px 0 0;
+}
+.page-nav button.active { color: var(--text); }
+
 .topbar {
   display: flex;
   align-items: center;
@@ -40,6 +52,13 @@
 
 .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
 .form-actions { display: flex; gap: 10px; }
+
+.qos-details { margin-bottom: 14px; }
+.qos-details summary {
+  cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+.qos-details .form-row { margin-top: 10px; margin-bottom: 0; }
 
 .error-card { border-color: var(--critical); color: var(--critical); font-family: var(--font-mono); font-size: 13px; }
 

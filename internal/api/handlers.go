@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/vectorcore/lcs/internal/gmlc"
 )
@@ -115,6 +116,56 @@ func (h *locationHandler) gmlcStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"reachable": false, "detail": err.Error()})
+}
+
+// history queries a target's recorded fixes (GMLC's Historic Location
+// Immediate service, MLP-only today — see gmlc.LocationClient.History).
+// Query params: target_kind (imsi|msisdn, required), target_value
+// (required), start (RFC3339, required), stop (RFC3339, optional — a
+// missing stop means "up to now").
+func (h *locationHandler) history(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	var target gmlc.Target
+	switch q.Get("target_kind") {
+	case "imsi":
+		target.IMSI = q.Get("target_value")
+	case "msisdn":
+		target.MSISDN = q.Get("target_value")
+	default:
+		writeError(w, http.StatusBadRequest, "invalid_request", "target_kind must be imsi or msisdn")
+		return
+	}
+	if target.IMSI == "" && target.MSISDN == "" {
+		writeError(w, http.StatusBadRequest, "invalid_request", "target_value is required")
+		return
+	}
+	start, err := time.Parse(time.RFC3339, q.Get("start"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request", "start is required and must be RFC3339")
+		return
+	}
+	var stop time.Time
+	if s := q.Get("stop"); s != "" {
+		if stop, err = time.Parse(time.RFC3339, s); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_request", "stop must be RFC3339")
+			return
+		}
+	}
+
+	points, err := h.client.History(r.Context(), target, start, stop)
+	if err != nil {
+		writeClientError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"points": points})
+}
+
+// emergencyNotConfigured answers every /api/v1/emergency/* route with a
+// real 404 when no "emergency" gmlc_clients profile exists — see
+// NewServer's own doc comment for why this can't just be left to the SPA
+// fallback.
+func emergencyNotConfigured(w http.ResponseWriter, r *http.Request) {
+	writeError(w, http.StatusNotFound, "emergency_not_configured", "no emergency gmlc_clients profile is configured")
 }
 
 func health(w http.ResponseWriter, r *http.Request) {

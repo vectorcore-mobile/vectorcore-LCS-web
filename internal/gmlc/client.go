@@ -129,3 +129,10 @@ func (c *JSONClient) Cancel(ctx context.Context, id string) (*RequestStatus, err
 func (c *JSONClient) Ready(ctx context.Context) error {
 	return c.do(ctx, http.MethodGet, "/readyz", nil, nil, nil)
 }
+
+// History always fails: GMLC's REST/JSON adapter (internal/httpapi) has no
+// location-history endpoint — only the MLP adapter's Historic Location
+// Immediate service (hlir/hlia, Phase C) does. See MLPClient.History.
+func (c *JSONClient) History(ctx context.Context, target Target, start, stop time.Time) ([]HistoryPoint, error) {
+	return nil, &StatusError{HTTPStatus: http.StatusNotImplemented, Code: "not_supported", Detail: "location history is only available over MLP (this profile is configured for protocol: json)"}
+}

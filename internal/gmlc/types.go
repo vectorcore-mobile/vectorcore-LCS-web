@@ -3,6 +3,7 @@ package gmlc
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 // These types mirror the JSON shapes documented in api.md (the GMLC's
@@ -69,6 +70,18 @@ type RequestStatus struct {
 	Result       *Result `json:"result,omitempty"`
 }
 
+// HistoryPoint is one recorded fix returned by LocationClient.History,
+// oldest first — the subset of Result a Historic Location Immediate query
+// (MLP hlir/hlia, GMLC Phase C) actually carries: point + circular
+// uncertainty only, no shape/ellipse fields, matching what GMLC's own
+// location_history table stores.
+type HistoryPoint struct {
+	RecordedAt        string   `json:"recorded_at"`
+	Latitude          *float64 `json:"latitude,omitempty"`
+	Longitude         *float64 `json:"longitude,omitempty"`
+	UncertaintyMeters *float64 `json:"uncertainty_meters,omitempty"`
+}
+
 // StatusError is returned by a LocationClient when the GMLC (or whatever
 // sits behind LocationClient) answers with a non-2xx response. HTTPStatus
 // is the status this console's own API should reflect back to the browser.
@@ -95,4 +108,12 @@ type LocationClient interface {
 	// usable (e.g. the GMLC's Diameter peers/storage), returning a
 	// StatusError describing why not, or nil if it's ready.
 	Ready(ctx context.Context) error
+	// History queries target's recorded fixes within [start, stop]
+	// (stop's zero value means "up to now"), oldest first. Backed by
+	// GMLC's Historic Location Immediate service — MLP-only today (see
+	// GMLC's Phase C): JSONClient has no REST/JSON equivalent to call and
+	// always returns a StatusError. An empty, non-error result means the
+	// query succeeded but nothing has been recorded for target yet — not
+	// the same as a StatusError.
+	History(ctx context.Context, target Target, start, stop time.Time) ([]HistoryPoint, error)
 }

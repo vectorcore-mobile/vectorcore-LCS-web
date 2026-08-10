@@ -10,10 +10,18 @@ import (
 )
 
 type Config struct {
-	Server  ServerConfig  `yaml:"server"`
-	GMLC    GMLCConfig    `yaml:"gmlc"`
-	Polling PollingConfig `yaml:"polling"`
-	Log     LogConfig     `yaml:"log"`
+	Server ServerConfig `yaml:"server"`
+	// GMLCClients is a list of named GMLC client profiles, each pointing
+	// at its own base_url/credentials/protocol. There must be exactly one
+	// profile named "default" — the one internal/api's existing routes
+	// bind to. Additional profiles (e.g. "emergency") are for future
+	// routes to bind to on their own — a genuinely separate GMLC client
+	// identity, not a UI toggle on the default one (LCS-Client-Type is
+	// resolved server-side, per-credential, on the GMLC — see
+	// docs/mlp-le-interface-plan.md's L3).
+	GMLCClients []GMLCClient  `yaml:"gmlc_clients"`
+	Polling     PollingConfig `yaml:"polling"`
+	Log         LogConfig     `yaml:"log"`
 }
 
 // ServerConfig is where the LCS console's own web UI/API listens.
@@ -22,15 +30,24 @@ type ServerConfig struct {
 	Port int    `yaml:"port"`
 }
 
-// GMLCConfig points at the GMLC's Le REST/JSON adapter and holds the
-// client credentials used to authenticate against it. These never reach
-// the browser — the console's backend is the only thing that talks to
-// the GMLC directly.
-type GMLCConfig struct {
+// GMLCClient is one named profile pointing at a GMLC Le adapter and the
+// credentials used to authenticate against it. These never reach the
+// browser — the console's backend is the only thing that talks to the
+// GMLC directly.
+type GMLCClient struct {
+	Name           string        `yaml:"name"`
 	BaseURL        string        `yaml:"base_url"`
 	ClientID       string        `yaml:"client_id"`
 	BearerToken    string        `yaml:"bearer_token"`
 	RequestTimeout time.Duration `yaml:"request_timeout"`
+	// Protocol selects which internal/gmlc.LocationClient implementation
+	// this profile builds: "json" (JSONClient, against the GMLC's interim
+	// REST/JSON adapter — the default if unset) or "mlp" (MLPClient,
+	// against the GMLC's OMA MLP/XML adapter). Both speak the same
+	// LocationClient interface, so which one a given profile uses is a
+	// config choice, not a code change — see cmd/lcs/main.go's client
+	// factory.
+	Protocol string `yaml:"protocol"`
 }
 
 // PollingConfig controls how the backend polls the GMLC for a submitted
@@ -57,9 +74,6 @@ func Load(path string) (*Config, error) {
 			Host: "0.0.0.0",
 			Port: 8090,
 		},
-		GMLC: GMLCConfig{
-			RequestTimeout: 10 * time.Second,
-		},
 		Polling: PollingConfig{
 			Interval: 2 * time.Second,
 			Timeout:  60 * time.Second,
@@ -75,17 +89,8 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("decode config: %w", err)
 	}
 
-	if cfg.GMLC.BaseURL == "" {
-		return nil, fmt.Errorf("gmlc.base_url is required")
-	}
-	if cfg.GMLC.ClientID == "" {
-		return nil, fmt.Errorf("gmlc.client_id is required")
-	}
-	if cfg.GMLC.BearerToken == "" {
-		return nil, fmt.Errorf("gmlc.bearer_token is required")
-	}
-	if cfg.GMLC.RequestTimeout <= 0 {
-		cfg.GMLC.RequestTimeout = 10 * time.Second
+	if err := cfg.validateAndApplyClientDefaults(); err != nil {
+		return nil, err
 	}
 	if cfg.Polling.Interval <= 0 {
 		cfg.Polling.Interval = 2 * time.Second
@@ -101,6 +106,62 @@ func Load(path string) (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// DefaultGMLCClient returns the profile named "default" — validated by
+// Load to always exist — the profile internal/api's existing routes bind
+// to.
+func (c *Config) DefaultGMLCClient() GMLCClient {
+	for _, p := range c.GMLCClients {
+		if p.Name == "default" {
+			return p
+		}
+	}
+	panic("config: no default gmlc_clients profile (Load should have rejected this)")
+}
+
+func (c *Config) validateAndApplyClientDefaults() error {
+	if len(c.GMLCClients) == 0 {
+		return fmt.Errorf("gmlc_clients: at least one profile is required (a \"default\" one)")
+	}
+	seen := map[string]bool{}
+	hasDefault := false
+	for i := range c.GMLCClients {
+		p := &c.GMLCClients[i]
+		if p.Name == "" {
+			return fmt.Errorf("gmlc_clients[%d]: name is required", i)
+		}
+		if seen[p.Name] {
+			return fmt.Errorf("gmlc_clients: duplicate profile name %q", p.Name)
+		}
+		seen[p.Name] = true
+		if p.Name == "default" {
+			hasDefault = true
+		}
+		if p.BaseURL == "" {
+			return fmt.Errorf("gmlc_clients[%s]: base_url is required", p.Name)
+		}
+		if p.ClientID == "" {
+			return fmt.Errorf("gmlc_clients[%s]: client_id is required", p.Name)
+		}
+		if p.BearerToken == "" {
+			return fmt.Errorf("gmlc_clients[%s]: bearer_token is required", p.Name)
+		}
+		if p.RequestTimeout <= 0 {
+			p.RequestTimeout = 10 * time.Second
+		}
+		switch p.Protocol {
+		case "":
+			p.Protocol = "json"
+		case "json", "mlp":
+		default:
+			return fmt.Errorf("gmlc_clients[%s]: protocol must be \"json\" or \"mlp\", got %q", p.Name, p.Protocol)
+		}
+	}
+	if !hasDefault {
+		return fmt.Errorf("gmlc_clients: a profile named \"default\" is required")
+	}
+	return nil
 }
 
 func (c *Config) Addr() string {

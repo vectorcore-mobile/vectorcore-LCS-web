@@ -1,7 +1,7 @@
 .PHONY: build clean deps install uninstall ui dev-ui
 
 BINARY=lcs
-APP_VERSION=0.1.0
+APP_VERSION=0.1.1d
 PREFIX=/opt/vectorcore
 BINDIR=$(PREFIX)/bin
 ETCDIR=$(PREFIX)/etc
