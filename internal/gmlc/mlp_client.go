@@ -67,12 +67,18 @@ type mlpSlir struct {
 type mlpEQoP struct {
 	RespReq *mlpRespReq `xml:"resp_req,omitempty"`
 	HorAcc  *mlpHorAcc  `xml:"hor_acc,omitempty"`
+	AltAcc  *mlpAltAcc  `xml:"alt_acc,omitempty"`
 }
 type mlpRespReq struct {
 	Type string `xml:"type,attr"`
 }
 type mlpHorAcc struct {
-	Value string `xml:",chardata"`
+	QosClass string `xml:"qos_class,attr,omitempty"`
+	Value    string `xml:",chardata"`
+}
+type mlpAltAcc struct {
+	QosClass string `xml:"qos_class,attr,omitempty"`
+	Value    string `xml:",chardata"`
 }
 type mlpLocType struct {
 	Type string `xml:"type,attr"`
@@ -281,14 +287,37 @@ func targetToMsid(t Target) (mlpMsid, error) {
 	return mlpMsid{}, fmt.Errorf("target requires imsi or msisdn")
 }
 
+// mlpQosClass maps the console's own lowercase QoS.Class contract
+// ("assured" / "best_effort") to MLP's qos_class attribute values
+// (§5.3.6.1/§5.3.44.1: ASSURED | BEST_EFFORT), which hang off the hor_acc
+// and alt_acc elements individually rather than off eqop as a whole.
+func mlpQosClass(class string) string {
+	switch class {
+	case "assured":
+		return "ASSURED"
+	case "best_effort":
+		return "BEST_EFFORT"
+	default:
+		return ""
+	}
+}
+
+// formatMeters renders an accuracy value per hor_acc/alt_acc's format,
+// [0-9]+ (§5.3.44, §5.3.6) — a plain non-negative integer, not the
+// decimal/scientific notation strconv's 'g' verb can produce.
+func formatMeters(v float64) string {
+	return strconv.FormatFloat(v, 'f', 0, 64)
+}
+
 // buildSlir renders req as an slir wire request. Only the fields MLP's
 // slir DTD (and GMLC's own reduced Phase A implementation of it) actually
-// carries have a mapping — qos.class, qos.vertical_accuracy_meters, and
-// qos.vertical_requested have no MLP eqop equivalent (TS 29.172's
-// assured/best_effort QoS-class concept and vertical accuracy don't exist
-// in MLP's DTD) and are silently not sent, a genuine protocol gap rather
-// than an oversight — GMLC's own MLP handler wouldn't read them even if
-// present.
+// carries have a mapping — qos.vertical_requested has no MLP eqop
+// equivalent (there's no way to ask for altitude itself over eqop, only
+// to constrain alt_acc once it's present) and is silently not sent.
+// qos.class and qos.vertical_accuracy_meters *do* map, onto the
+// qos_class attribute and alt_acc element respectively (§5.3.6, eqop's
+// DTD: eqop (resp_req?, resp_timer?, (ll_acc|hor_acc)?, alt_acc?,
+// max_loc_age?)) — see mlpQosClass.
 func buildSlir(req SubmitRequest) (mlpSlir, error) {
 	m, err := targetToMsid(req.Target)
 	if err != nil {
@@ -308,8 +337,13 @@ func buildSlir(req SubmitRequest) (mlpSlir, error) {
 	if req.QoS != nil {
 		var e mlpEQoP
 		var any bool
+		qosClass := mlpQosClass(req.QoS.Class)
 		if req.QoS.HorizontalAccuracyMeters != nil {
-			e.HorAcc = &mlpHorAcc{Value: strconv.FormatFloat(*req.QoS.HorizontalAccuracyMeters, 'g', -1, 64)}
+			e.HorAcc = &mlpHorAcc{QosClass: qosClass, Value: formatMeters(*req.QoS.HorizontalAccuracyMeters)}
+			any = true
+		}
+		if req.QoS.VerticalAccuracyMeters != nil {
+			e.AltAcc = &mlpAltAcc{QosClass: qosClass, Value: formatMeters(*req.QoS.VerticalAccuracyMeters)}
 			any = true
 		}
 		switch req.QoS.ResponseTime {
