@@ -1,5 +1,5 @@
 // Command lcs runs the VectorCore LCS console: a web UI + thin proxy API
-// that requests UE locations from a GMLC over its Le REST/JSON adapter.
+// that requests UE locations from a GMLC over its OMA MLP Le adapter.
 package main
 
 import (
@@ -75,25 +75,17 @@ func main() {
 	}
 }
 
-// buildGMLCClients constructs one LocationClient per configured profile,
-// keyed by profile name — config.Load has already validated that a
-// "default" profile exists and every profile's protocol is "json" or
-// "mlp". Profiles beyond "default" (e.g. "emergency" — see L3 in
-// docs/mlp-le-interface-plan.md) aren't wired to any route yet; building
-// them here regardless keeps this factory the single place that knows how
-// to turn a profile into a client, ready for internal/api to grow a
-// second handler bound to one.
+// buildGMLCClients constructs one MLP LocationClient per configured
+// profile, keyed by profile name — config.Load has already validated that
+// a "default" profile exists. Profiles beyond "default" (e.g. "emergency"
+// — see L3 in docs/mlp-le-interface-plan.md) aren't wired to any route
+// yet; building them here regardless keeps this factory the single place
+// that knows how to turn a profile into a client, ready for internal/api
+// to grow a second handler bound to one.
 func buildGMLCClients(profiles []config.GMLCClient) (map[string]gmlc.LocationClient, error) {
 	out := make(map[string]gmlc.LocationClient, len(profiles))
 	for _, p := range profiles {
-		switch p.Protocol {
-		case "mlp":
-			out[p.Name] = gmlc.NewMLP(p.BaseURL, p.ClientID, p.BearerToken, p.RequestTimeout)
-		case "json":
-			out[p.Name] = gmlc.New(p.BaseURL, p.ClientID, p.BearerToken, p.RequestTimeout)
-		default:
-			return nil, fmt.Errorf("gmlc_clients[%s]: unknown protocol %q", p.Name, p.Protocol)
-		}
+		out[p.Name] = gmlc.NewMLP(p.BaseURL, p.ClientID, p.BearerToken, p.RequestTimeout)
 	}
 	return out, nil
 }

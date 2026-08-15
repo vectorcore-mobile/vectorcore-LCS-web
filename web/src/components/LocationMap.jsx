@@ -2,10 +2,10 @@ import React, { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// result is a GMLC "result" object (see api.md): latitude/longitude plus
-// whichever of uncertainty_meters (circle) or semi_major/minor_meters
-// (ellipse) the shape carries. Leaflet has no native ellipse primitive, so
-// an ellipse is approximated with a dashed circle at its semi-major radius.
+// result is a GMLC "result" object: latitude/longitude plus whichever of
+// uncertainty_meters (circle) or semi_major/minor_meters (ellipse) the
+// shape carries. Leaflet has no native ellipse primitive, so an ellipse is
+// approximated with a dashed circle at its semi-major radius.
 export default function LocationMap({ result }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)

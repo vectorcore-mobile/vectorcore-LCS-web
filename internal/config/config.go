@@ -12,12 +12,12 @@ import (
 type Config struct {
 	Server ServerConfig `yaml:"server"`
 	// GMLCClients is a list of named GMLC client profiles, each pointing
-	// at its own base_url/credentials/protocol. There must be exactly one
-	// profile named "default" — the one internal/api's existing routes
-	// bind to. Additional profiles (e.g. "emergency") are for future
-	// routes to bind to on their own — a genuinely separate GMLC client
-	// identity, not a UI toggle on the default one (LCS-Client-Type is
-	// resolved server-side, per-credential, on the GMLC — see
+	// at its own base_url/credentials. There must be exactly one profile
+	// named "default" — the one internal/api's existing routes bind to.
+	// Additional profiles (e.g. "emergency") are for future routes to
+	// bind to on their own — a genuinely separate GMLC client identity,
+	// not a UI toggle on the default one (LCS-Client-Type is resolved
+	// server-side, per-credential, on the GMLC — see
 	// docs/mlp-le-interface-plan.md's L3).
 	GMLCClients []GMLCClient  `yaml:"gmlc_clients"`
 	Polling     PollingConfig `yaml:"polling"`
@@ -40,14 +40,6 @@ type GMLCClient struct {
 	ClientID       string        `yaml:"client_id"`
 	BearerToken    string        `yaml:"bearer_token"`
 	RequestTimeout time.Duration `yaml:"request_timeout"`
-	// Protocol selects which internal/gmlc.LocationClient implementation
-	// this profile builds: "json" (JSONClient, against the GMLC's interim
-	// REST/JSON adapter — the default if unset) or "mlp" (MLPClient,
-	// against the GMLC's OMA MLP/XML adapter). Both speak the same
-	// LocationClient interface, so which one a given profile uses is a
-	// config choice, not a code change — see cmd/lcs/main.go's client
-	// factory.
-	Protocol string `yaml:"protocol"`
 }
 
 // PollingConfig controls how the backend polls the GMLC for a submitted
@@ -149,13 +141,6 @@ func (c *Config) validateAndApplyClientDefaults() error {
 		}
 		if p.RequestTimeout <= 0 {
 			p.RequestTimeout = 10 * time.Second
-		}
-		switch p.Protocol {
-		case "":
-			p.Protocol = "json"
-		case "json", "mlp":
-		default:
-			return fmt.Errorf("gmlc_clients[%s]: protocol must be \"json\" or \"mlp\", got %q", p.Name, p.Protocol)
 		}
 	}
 	if !hasDefault {

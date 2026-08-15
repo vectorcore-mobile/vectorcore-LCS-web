@@ -7,10 +7,10 @@ const POLL_TIMEOUT_MS = 90000
 const GMLC_STATUS_POLL_MS = 15000
 
 // buildQos assembles gmlc.SubmitRequest's qos object from the form's
-// individually-optional fields, omitting anything left unset — matching
-// api.md's "every child field is independently optional" contract.
-// Returns undefined (not {}) when nothing was set, so a submit with no QoS
-// preferences sends no qos key at all.
+// individually-optional fields, omitting anything left unset — every
+// child field of qos is independently optional. Returns undefined (not
+// {}) when nothing was set, so a submit with no QoS preferences sends no
+// qos key at all.
 function buildQos({ qosClass, horizontalAccuracy, verticalAccuracy, verticalRequested, responseTime }) {
   const qos = {}
   if (qosClass) qos.class = qosClass

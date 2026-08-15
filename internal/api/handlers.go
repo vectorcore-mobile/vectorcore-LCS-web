@@ -119,7 +119,7 @@ func (h *locationHandler) gmlcStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 // history queries a target's recorded fixes (GMLC's Historic Location
-// Immediate service, MLP-only today — see gmlc.LocationClient.History).
+// Immediate service, over MLP — see gmlc.LocationClient.History).
 // Query params: target_kind (imsi|msisdn, required), target_value
 // (required), start (RFC3339, required), stop (RFC3339, optional — a
 // missing stop means "up to now").

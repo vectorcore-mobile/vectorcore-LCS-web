@@ -8,19 +8,16 @@ server:
 gmlc_clients:
   # A list of named GMLC client profiles. There must be exactly one named
   # "default" — the one this console's existing routes use. Additional
-  # profiles (e.g. "emergency") can point at a different base_url,
-  # credential, and/or protocol without touching this one.
+  # profiles (e.g. "emergency") can point at a different base_url and/or
+  # credential without touching this one. Every profile speaks OMA MLP
+  # (internal/mlp, the real Le adapter) — there is no other option.
   - name: default
-    # Base URL of the GMLC adapter this profile talks to.
+    # Base URL of the GMLC's MLP adapter this profile talks to.
     base_url: "http://10.90.250.29:9210"
     # Must match one of gmlc.yaml's clients[].id / bearer_token on the GMLC.
     client_id: "example-lcs-client"
     bearer_token: "b3500b2533bf30110a1a2a6d41f76ed2d5caa9e0dcad5e45e43509a7980baede"
     request_timeout: "120s"
-    # protocol: "json" (internal/httpapi, the REST/JSON adapter — see
-    # api.md) or "mlp" (internal/mlp, the real OMA MLP/XML Le adapter).
-    # Defaults to "json" if omitted.
-    protocol: "mlp"
 
 polling:
   # The GMLC API has no push/streaming — the console polls GET until a

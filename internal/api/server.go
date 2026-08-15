@@ -1,5 +1,5 @@
 // Package api wires the LCS console's own thin HTTP API (which proxies to
-// the GMLC's Le REST/JSON adapter) together with the embedded React UI.
+// the GMLC's OMA MLP Le adapter) together with the embedded React UI.
 package api
 
 import (

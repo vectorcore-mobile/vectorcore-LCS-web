@@ -6,13 +6,10 @@ import (
 	"time"
 )
 
-// These types mirror the JSON shapes documented in api.md (the GMLC's
-// interim Le REST/JSON adapter). They are deliberately kept as the
-// console's own stable contract — see LocationClient in interface.go for
-// why: when the GMLC grows a real Le adapter (OMA MLP over XML, TS
-// 29.171/29.172) instead of this interim JSON one, only a new
-// implementation of LocationClient needs to change. These structs, the
-// console's own /api/v1 handlers, and the frontend stay the same.
+// These types are the console's own stable contract, decoupled from the
+// wire shapes MLPClient actually speaks (OMA MLP over XML, TS
+// 29.171/29.172) — see LocationClient below. The console's own /api/v1
+// handlers and the frontend only ever deal in these.
 
 type Target struct {
 	IMSI   string `json:"imsi,omitempty"`
@@ -38,8 +35,8 @@ type SubmitRequest struct {
 	QoS          *QoS    `json:"qos,omitempty"`
 }
 
-// Result is only present once a RequestStatus's State is "completed". Every
-// field is independently optional — see api.md's "result" table.
+// Result is only present once a RequestStatus's State is "completed".
+// Every field is independently optional.
 type Result struct {
 	CreatedAt                    string   `json:"created_at,omitempty"`
 	Shape                        string   `json:"shape,omitempty"`
@@ -55,8 +52,8 @@ type Result struct {
 	AccuracyFulfilment           string   `json:"accuracy_fulfilment,omitempty"`
 }
 
-// RequestStatus is the shape returned by submit, GET, DELETE, and the async
-// callback — api.md calls it "the status object".
+// RequestStatus is the shape returned by submit, GET, DELETE, and the
+// async callback — the console's own "status object".
 type RequestStatus struct {
 	ID           string  `json:"id"`
 	ServiceType  string  `json:"service_type"`
@@ -95,11 +92,10 @@ func (e *StatusError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Detail)
 }
 
-// LocationClient is what the console's HTTP handlers depend on. Today it's
-// implemented by JSONClient against the GMLC's interim Le REST/JSON
-// adapter. A future implementation can speak the real Le standard (OMA MLP
-// over XML/HTTP, TS 29.171/29.172) behind this same interface — the
-// console's own API and frontend never need to know which one is in use.
+// LocationClient is what the console's HTTP handlers depend on. It's
+// implemented by MLPClient, which speaks the real Le standard (OMA MLP
+// over XML/HTTP, TS 29.171/29.172) — the console's own API and frontend
+// never need to know anything about the wire protocol behind it.
 type LocationClient interface {
 	Submit(ctx context.Context, req SubmitRequest, idempotencyKey string) (*RequestStatus, error)
 	Get(ctx context.Context, id string) (*RequestStatus, error)
@@ -110,10 +106,8 @@ type LocationClient interface {
 	Ready(ctx context.Context) error
 	// History queries target's recorded fixes within [start, stop]
 	// (stop's zero value means "up to now"), oldest first. Backed by
-	// GMLC's Historic Location Immediate service — MLP-only today (see
-	// GMLC's Phase C): JSONClient has no REST/JSON equivalent to call and
-	// always returns a StatusError. An empty, non-error result means the
-	// query succeeded but nothing has been recorded for target yet — not
-	// the same as a StatusError.
+	// GMLC's Historic Location Immediate service (see GMLC's Phase C). An
+	// empty, non-error result means the query succeeded but nothing has
+	// been recorded for target yet — not the same as a StatusError.
 	History(ctx context.Context, target Target, start, stop time.Time) ([]HistoryPoint, error)
 }

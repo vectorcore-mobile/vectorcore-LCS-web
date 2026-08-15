@@ -5,7 +5,7 @@
 // GMLC resolves LCS-Client-Type purely from which client credential
 // authenticated, not from which MLP element was used — see L3 in
 // docs/mlp-le-interface-plan.md. This is also why an "emergency" profile
-// can run over plain JSON (see JSONClient) or MLP interchangeably.
+// is just a separate set of MLP credentials, not a different protocol.
 package gmlc
 
 import (
@@ -347,9 +347,8 @@ func (c *MLPClient) post(ctx context.Context, body []byte) (int, []byte, error) 
 }
 
 // buildFailedStatus renders a per-target poserr as a normal "failed"
-// RequestStatus — not a Submit error. This mirrors the REST API's own
-// state=failed shape: GMLC dispatched the request, it just didn't resolve
-// to a position.
+// RequestStatus — not a Submit error: GMLC dispatched the request, it
+// just didn't resolve to a position.
 func buildFailedStatus(id string, req SubmitRequest, posErr *mlpPosErr, now string) *RequestStatus {
 	return &RequestStatus{
 		ID: id, ServiceType: "immediate", State: "failed",
@@ -467,11 +466,10 @@ func (c *MLPClient) Cancel(ctx context.Context, id string) (*RequestStatus, erro
 
 // Ready does a best-effort transport-level reachability check: POST a
 // request GMLC's MLP listener won't recognize as any defined service and
-// confirm we get a well-formed HTTP response back at all. Unlike
-// JSONClient.Ready (GET /readyz, which reflects GMLC's own Diameter/
-// storage health), MLP's HTTP binding has no dedicated health endpoint —
-// this can only prove the listener itself is up, not that GMLC's backend
-// is healthy. That's a real, documented gap, not an oversight.
+// confirm we get a well-formed HTTP response back at all. MLP's HTTP
+// binding has no dedicated health endpoint — this can only prove the
+// listener itself is up, not that GMLC's backend (Diameter peers,
+// storage) is healthy. That's a real, documented gap, not an oversight.
 func (c *MLPClient) Ready(ctx context.Context) error {
 	envelope := mlpSvcInit{Ver: mlpVersion, Hdr: mlpHdr{Ver: mlpVersion, Client: mlpClient{ID: c.clientID, Pwd: c.bearerToken}}}
 	body, err := xml.Marshal(envelope)

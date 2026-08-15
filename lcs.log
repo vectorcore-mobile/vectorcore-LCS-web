@@ -1,0 +1,25 @@
+time=2026-08-15T03:43:19.022Z level=INFO msg="starting VectorCore LCS" addr=0.0.0.0:8090 gmlc_clients=1
+time=2026-08-15T03:43:40.575Z level=INFO msg=request method=GET path=/ remote=192.168.105.20:53772
+time=2026-08-15T03:43:40.612Z level=INFO msg=request method=GET path=/assets/index-3Y9t9OIc.css remote=192.168.105.20:63771
+time=2026-08-15T03:43:40.615Z level=INFO msg=request method=GET path=/assets/index-Cl1O3dFD.js remote=192.168.105.20:53772
+time=2026-08-15T03:43:40.827Z level=INFO msg=request method=GET path=/api/v1/gmlc/status remote=192.168.105.20:53772
+time=2026-08-15T03:43:40.827Z level=INFO msg=request method=GET path=/api/v1/emergency/gmlc/status remote=192.168.105.20:63771
+time=2026-08-15T03:43:40.859Z level=INFO msg=request method=GET path=/favicon.ico remote=192.168.105.20:63771
+time=2026-08-15T03:43:54.127Z level=INFO msg=request method=POST path=/api/v1/location-requests remote=192.168.105.20:63771
+time=2026-08-15T03:43:55.835Z level=INFO msg=request method=GET path=/api/v1/gmlc/status remote=192.168.105.20:63771
+time=2026-08-15T03:44:10.844Z level=INFO msg=request method=GET path=/api/v1/gmlc/status remote=192.168.105.20:63771
+time=2026-08-15T03:44:15.463Z level=INFO msg=request method=POST path=/api/v1/location-requests remote=192.168.105.20:63771
+time=2026-08-15T03:44:25.836Z level=INFO msg=request method=GET path=/api/v1/gmlc/status remote=192.168.105.20:63771
+time=2026-08-15T03:44:29.227Z level=INFO msg=request method=GET path=/api/v1/history remote=192.168.105.20:63771
+time=2026-08-15T03:44:39.139Z level=INFO msg=request method=GET path=/api/v1/history remote=192.168.105.20:63771
+time=2026-08-15T03:44:39.983Z level=INFO msg=request method=GET path=/api/v1/history remote=192.168.105.20:63771
+time=2026-08-15T03:44:40.454Z level=INFO msg=request method=GET path=/api/v1/history remote=192.168.105.20:63771
+time=2026-08-15T03:44:40.669Z level=INFO msg=request method=GET path=/api/v1/history remote=192.168.105.20:63771
+time=2026-08-15T03:44:40.835Z level=INFO msg=request method=GET path=/api/v1/gmlc/status remote=192.168.105.20:63771
+time=2026-08-15T03:44:40.871Z level=INFO msg=request method=GET path=/api/v1/history remote=192.168.105.20:63771
+time=2026-08-15T03:44:41.083Z level=INFO msg=request method=GET path=/api/v1/history remote=192.168.105.20:63771
+time=2026-08-15T03:44:41.253Z level=INFO msg=request method=GET path=/api/v1/history remote=192.168.105.20:63771
+time=2026-08-15T03:45:01.529Z level=INFO msg="starting VectorCore LCS" addr=0.0.0.0:8090 gmlc_clients=1
+time=2026-08-15T03:45:11.423Z level=INFO msg=request method=GET path=/api/v1/gmlc/status remote=192.168.105.20:55056
+time=2026-08-15T03:45:26.396Z level=INFO msg=request method=GET path=/api/v1/gmlc/status remote=192.168.105.20:55056
+time=2026-08-15T03:45:41.402Z level=INFO msg=request method=GET path=/api/v1/gmlc/status remote=192.168.105.20:55056
